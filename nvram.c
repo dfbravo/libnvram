@@ -32,7 +32,7 @@
 // https://lkml.org/lkml/2007/3/9/10
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]) + sizeof(typeof(int[1 - 2 * !!__builtin_types_compatible_p(typeof(arr), typeof(&arr[0]))])) * 0)
 
-#define PRINT_MSG(fmt, ...) do { if (DEBUG) { fprintf(stderr, "%s: "fmt, __FUNCTION__, __VA_ARGS__); } } while (0)
+#define PRINT_MSG(fmt, ...) do { if (DEBUG) { fprintf(stderr, "PID %d: %s: "fmt, getpid(), __FUNCTION__, __VA_ARGS__); } } while (0)
 
 /* Weak symbol definitions for library functions that may not be present */
 __typeof__(ftok) __attribute__((weak)) ftok;
@@ -188,6 +188,7 @@ int nvram_init(void) {
     // Checked by certain Ralink routers
     if ((f = fopen("/var/run/nvramd.pid", "w+")) == NULL) {
         PRINT_MSG("Unable to touch Ralink PID file: %s!\n", "/var/run/nvramd.pid");
+        PRINT_MSG("Error: %d (%s)\n", errno, strerror(errno));
     }
     else {
         fclose(f);
@@ -379,7 +380,7 @@ int nvram_get_buf(const char *key, char *buf, size_t sz) {
         return E_FAILURE;
     }
 
-    PRINT_MSG("%s\n", key);
+    PRINT_MSG("Accessing: %s\n", key);
 
     strncat(path, key, ARRAY_SIZE(path) - ARRAY_SIZE(MOUNT_POINT) - 1);
 
@@ -388,16 +389,18 @@ int nvram_get_buf(const char *key, char *buf, size_t sz) {
     if ((f = fopen(path, "rb")) == NULL) {
         sem_unlock();
         PRINT_MSG("Unable to open key: %s!\n", path);
+        PRINT_MSG("Error: %d (%s)\n", errno, strerror(errno));
         return E_FAILURE;
     }
 
     if (fgets(buf, sz, f) != buf) {
+        PRINT_MSG("Key: %s is empty!\n", key);
         buf[0] = '\0';
     }
     fclose(f);
     sem_unlock();
 
-    PRINT_MSG("= \"%s\"\n", buf);
+    PRINT_MSG("%s= \"%s\"\n", key, buf);
 
     return E_SUCCESS;
 }
@@ -421,6 +424,7 @@ int nvram_get_int(const char *key) {
     if ((f = fopen(path, "rb")) == NULL) {
         sem_unlock();
         PRINT_MSG("Unable to open key: %s!\n", path);
+        PRINT_MSG("Error: %d (%s)\n", errno, strerror(errno));
         return E_FAILURE;
     }
 
@@ -479,6 +483,7 @@ int nvram_getall(char *buf, size_t len) {
             closedir(dir);
             sem_unlock();
             PRINT_MSG("Unable to open key: %s!\n", path);
+            PRINT_MSG("Error: %d (%s)\n", errno, strerror(errno));
             return E_FAILURE;
         }
 
@@ -520,6 +525,7 @@ int nvram_set(const char *key, const char *val) {
     if ((f = fopen(path, "wb")) == NULL) {
         sem_unlock();
         PRINT_MSG("Unable to open key: %s!\n", path);
+        PRINT_MSG("Error: %d (%s)\n", errno, strerror(errno));
         return E_FAILURE;
     }
 
@@ -553,6 +559,7 @@ int nvram_set_int(const char *key, const int val) {
     if ((f = fopen(path, "wb")) == NULL) {
         sem_unlock();
         PRINT_MSG("Unable to open key: %s!\n", path);
+        PRINT_MSG("Error: %d (%s)\n", errno, strerror(errno));
         return E_FAILURE;
     }
 

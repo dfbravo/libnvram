@@ -1,4 +1,4 @@
-CFLAGS=-O2 -fPIC -Wall
+CFLAGS=-O2 -fPIC -Wall -g
 LDFLAGS=-shared -nostdlib
 
 OBJECTS=$(SOURCES:.c=.o)
