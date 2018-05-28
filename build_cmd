@@ -1,3 +1,3 @@
-CC=/home/diego/Documents/toolchains/mipsel-linux-musl/usr/bin/mipsel-buildroot-linux-musl-gcc make
-#CC=/home/diego/Documents/toolchains/mipseb-linux-musl/usr/bin/mips-buildroot-linux-musl-gcc make
-#CC=/home/diego/Documents/toolchains/armel-linux-musl/usr/bin/arm-buildroot-linux-musleabi-gcc make
+CC=/media/aspen/Documents/toolchains/mipsel-linux-musl/usr/bin/mipsel-buildroot-linux-musl-gcc make
+#CC=/media/aspen/Documents/toolchains/mipseb-linux-musl/usr/bin/mips-buildroot-linux-musl-gcc make
+#CC=/media/aspen/Documents/toolchains/armel-linux-musl/usr/bin/arm-buildroot-linux-musleabi-gcc make
