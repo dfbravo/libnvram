@@ -59,18 +59,18 @@ static int sem_get() {
 
     // Generate key for semaphore based on the mount point
     if (!ftok || (key = ftok(MOUNT_POINT, IPC_KEY)) == -1) {
-        PRINT_MSG("%s\n", "Unable to get semaphore key!");
+        //PRINT_MSG("%s\n", "Unable to get semaphore key!");
         return -1;
     }
 
-    PRINT_MSG("Key: %x\n", key);
+    //PRINT_MSG("Key: %x\n", key);
 
     // Get the semaphore using the key
     if ((semid = semget(key, 1, IPC_CREAT | IPC_EXCL | 0666)) >= 0) {
         semun.val = 1;
         // Unlock the semaphore and set the sem_otime field
         if (semop(semid, &sembuf, 1) == -1) {
-            PRINT_MSG("%s\n", "Unable to initialize semaphore!");
+            //PRINT_MSG("%s\n", "Unable to initialize semaphore!");
             // Clean up semaphore
             semctl(semid, 0, IPC_RMID);
             semid = -1;
@@ -78,7 +78,7 @@ static int sem_get() {
     } else if (errno == EEXIST) {
         // Get the semaphore in non-exclusive mode
         if ((semid = semget(key, 1, 0)) < 0) {
-            PRINT_MSG("%s\n", "Unable to get semaphore non-exclusively!");
+            //PRINT_MSG("%s\n", "Unable to get semaphore non-exclusively!");
             return semid;
         }
 
@@ -92,7 +92,7 @@ static int sem_get() {
             }
 
             if (!(timeout % 100)) {
-                PRINT_MSG("Waiting for semaphore initialization (Key: %x, Semaphore: %x)...\n", key, semid);
+                //PRINT_MSG("Waiting for semaphore initialization (Key: %x, Semaphore: %x)...\n", key, semid);
             }
         }
     }
@@ -131,14 +131,14 @@ static void sem_lock() {
 cont:
     // Must get sempahore after NVRAM initialization, mounting will change ID
     if ((semid = sem_get()) == -1) {
-        PRINT_MSG("%s\n", "Unable to get semaphore!");
+        //PRINT_MSG("%s\n", "Unable to get semaphore!");
         return;
     }
 
-//    PRINT_MSG("%s\n", "Locking semaphore...");
+//    //PRINT_MSG("%s\n", "Locking semaphore...");
 
     if (semop(semid, &sembuf, 1) == -1) {
-        PRINT_MSG("%s\n", "Unable to lock semaphore!");
+        //PRINT_MSG("%s\n", "Unable to lock semaphore!");
     }
 
     return;
@@ -153,14 +153,14 @@ static void sem_unlock() {
     };
 
     if ((semid = sem_get(NULL)) == -1) {
-        PRINT_MSG("%s\n", "Unable to get semaphore!");
+        //PRINT_MSG("%s\n", "Unable to get semaphore!");
         return;
     }
 
-//    PRINT_MSG("%s\n", "Unlocking semaphore...");
+//    //PRINT_MSG("%s\n", "Unlocking semaphore...");
 
     if (semop(semid, &sembuf, 1) == -1) {
-        PRINT_MSG("%s\n", "Unable to unlock semaphore!");
+        //PRINT_MSG("%s\n", "Unable to unlock semaphore!");
     }
 
     return;
@@ -168,6 +168,7 @@ static void sem_unlock() {
 
 int nvram_init(void) {
     FILE *f;
+    int ret;
 
     PRINT_MSG("%s\n", "Initializing NVRAM...");
 
@@ -195,8 +196,9 @@ int nvram_init(void) {
     }
 
     sem_unlock();
-
-    return nvram_set_default();
+    ret = nvram_set_default();
+    PRINT_MSG("%s\n", "Done initializing NVRAM");
+    return ret;
 }
 
 int nvram_reset(void) {
@@ -370,6 +372,9 @@ int nvram_get_buf(const char *key, char *buf, size_t sz) {
     char path[PATH_MAX] = MOUNT_POINT;
     FILE *f;
 
+    int errnum;
+    char* errstr;
+
     if (!buf) {
         PRINT_MSG("NULL output buffer, key: %s!\n", key);
         return E_FAILURE;
@@ -387,9 +392,11 @@ int nvram_get_buf(const char *key, char *buf, size_t sz) {
     sem_lock();
 
     if ((f = fopen(path, "rb")) == NULL) {
+        errnum = errno;
+        errstr = strerror(errno);
         sem_unlock();
         PRINT_MSG("Unable to open key: %s!\n", path);
-        PRINT_MSG("Error: %d (%s)\n", errno, strerror(errno));
+        PRINT_MSG("Error: %d (%s)\n", errnum, errstr);
         return E_FAILURE;
     }
 
@@ -431,7 +438,7 @@ int nvram_get_int(const char *key) {
     if (fread(&ret, sizeof(ret), 1, f) != 1) {
         fclose(f);
         sem_unlock();
-        PRINT_MSG("Unable to read key: %s!\n", path);
+        //PRINT_MSG("Unable to read key: %s!\n", path);
         return E_FAILURE;
     }
     fclose(f);
